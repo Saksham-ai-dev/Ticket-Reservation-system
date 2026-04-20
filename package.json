@@ -1,0 +1,8 @@
+{
+  "name": "ticket-reservation",
+  "version": "1.0.0",
+  "main": "Backend/server.js",
+  "scripts": {
+    "start": "node Backend/server.js"
+  }
+}
