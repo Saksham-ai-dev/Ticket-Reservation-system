@@ -163,6 +163,112 @@ header {
   font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.05em;
 }
 
+.featured-event {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, rgba(232,255,71,0.08), rgba(0,212,255,0.08));
+  border: 1px solid rgba(232,255,71,0.18);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--glow);
+}
+
+.featured-visual {
+  min-height: 320px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.featured-visual.concert { background: linear-gradient(140deg, #160429, #44206d 55%, #0e1320); }
+.featured-visual.sports { background: linear-gradient(140deg, #041a47, #0c4b85 55%, #0e1320); }
+.featured-visual.movie { background: linear-gradient(140deg, #280606, #6e1f1f 55%, #0e1320); }
+
+.featured-pill {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(8,11,18,0.6);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.featured-icon {
+  position: absolute;
+  right: 1.5rem;
+  top: 1.2rem;
+  font-size: 4.5rem;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,0.35));
+}
+
+.featured-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+}
+
+.featured-copy {
+  max-width: 520px;
+  color: rgba(240,244,255,0.82);
+  line-height: 1.7;
+  font-size: 0.96rem;
+}
+
+.featured-panel {
+  background: rgba(8,11,18,0.72);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.featured-meta {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.featured-meta-item {
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+}
+
+.featured-meta-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.3rem;
+}
+
+.featured-meta-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.featured-price {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--accent);
+  font-weight: 800;
+}
+
 /* ── EVENTS GRID ── */
 .events-grid {
   display: grid;
@@ -491,6 +597,9 @@ header {
   .stats-bar { grid-template-columns: repeat(2, 1fr); }
   .events-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }
+  .featured-event { grid-template-columns: 1fr; }
+  .featured-visual { min-height: 260px; padding: 1.5rem; }
+  .featured-icon { font-size: 3.5rem; right: 1rem; }
   header { padding: 0 1rem; }
   .main { padding: 1.25rem; }
   .hero { padding: 3rem 1.25rem 2rem; }
@@ -532,6 +641,8 @@ header {
       <div class="stat-card"><span class="stat-val" id="stat-tickets">—</span><div class="stat-label">Tickets Sold</div></div>
       <div class="stat-card"><span class="stat-val" id="stat-revenue">—</span><div class="stat-label">Total Revenue</div></div>
     </div>
+
+    <div id="featured-event"></div>
 
     <div class="section-title">
       Featured Events <span id="event-count"></span>
@@ -613,6 +724,7 @@ async function loadEvents() {
 function renderEvents(events) {
   const grid = document.getElementById('events-grid');
   document.getElementById('event-count').textContent = `${events.length} event${events.length !== 1 ? 's' : ''}`;
+  renderFeaturedEvent(events);
 
   if (!events.length) {
     grid.innerHTML = '<div class="empty-state"><div class="big">🔍</div><p>No events match your search.</p></div>';
@@ -661,6 +773,53 @@ function setFilter(cat, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   filterEvents();
+}
+
+function renderFeaturedEvent(events) {
+  const mount = document.getElementById('featured-event');
+
+  if (!events.length) {
+    mount.innerHTML = '';
+    return;
+  }
+
+  const featured = [...events].sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+  const icons = { Concert: 'ðŸŽµ', Sports: 'âš¡', Movie: 'ðŸŽ¬' };
+  const minPrice = Math.min(...featured.tickets.map(t => t.price));
+  const totalSeats = featured.tickets.reduce((sum, ticket) => sum + ticket.total, 0);
+  const availableSeats = featured.tickets.reduce((sum, ticket) => sum + ticket.available, 0);
+  const dateStr = new Date(featured.date).toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  mount.innerHTML = `
+    <section class="featured-event">
+      <div class="featured-visual ${featured.image}">
+        <div class="featured-pill">Featured Pick</div>
+        <div class="featured-icon">${icons[featured.category] || 'ðŸŽª'}</div>
+        <div class="featured-title">${featured.title}</div>
+        <div class="featured-copy">${featured.description}</div>
+      </div>
+      <div class="featured-panel">
+        <div class="featured-meta">
+          <div class="featured-meta-item">
+            <div class="featured-meta-label">When</div>
+            <div class="featured-meta-value">${dateStr} Â· ${featured.time}</div>
+          </div>
+          <div class="featured-meta-item">
+            <div class="featured-meta-label">Where</div>
+            <div class="featured-meta-value">${featured.venue}</div>
+          </div>
+          <div class="featured-meta-item">
+            <div class="featured-meta-label">Seats Left</div>
+            <div class="featured-meta-value">${availableSeats} of ${totalSeats} available</div>
+          </div>
+        </div>
+        <div>
+          <div class="featured-meta-label">Starting From</div>
+          <div class="featured-price">â‚¹${minPrice.toLocaleString('en-IN')}</div>
+          <button class="btn-primary" style="margin-top:1rem" onclick="openBookingModal('${featured.id}')">Book Featured Event</button>
+        </div>
+      </div>
+    </section>`;
 }
 
 function filterEvents() {
